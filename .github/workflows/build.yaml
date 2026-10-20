@@ -1,7 +1,7 @@
 name: Build ArmorPaint Automatically
 
 on:
-  workflow_dispatch: 
+  workflow_dispatch: # Memungkinkan Anda menjalankan build secara manual kapan saja
 
 jobs:
   build-windows:
@@ -9,14 +9,14 @@ jobs:
 
     steps:
     - name: Checkout Repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v6
       with:
         submodules: recursive
 
     - name: Setup Node.js
-      uses: actions/setup-node@v4
+      uses: actions/setup-node@v6
       with:
-        node-version: 18
+        node-version: 24
 
     - name: Extract V8 Library
       shell: powershell
@@ -37,11 +37,8 @@ jobs:
     - name: Prepare Final Application Folder
       shell: powershell
       run: |
-        # Membuat direktori output untuk artifact
         New-Item -ItemType Directory -Path ./ArmorPaint-Windows
-        # Menyalin aset aplikasi yang diperlukan
         Copy-Item -Path ./build/krom/* -Destination ./ArmorPaint-Windows/ -Recurse
-        # Menyalin executable hasil compile ke folder utama aplikasi
         Copy-Item -Path ./armorcore/build/x64/Release/Krom.exe -Destination ./ArmorPaint-Windows/ArmorPaint.exe
 
     - name: Upload Compiled ArmorPaint

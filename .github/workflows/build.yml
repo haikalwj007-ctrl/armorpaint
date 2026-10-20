@@ -1,0 +1,51 @@
+name: Build ArmorPaint Automatically
+
+on:
+  workflow_dispatch: 
+
+jobs:
+  build-windows:
+    runs-on: windows-2022
+
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+      with:
+        submodules: recursive
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: 18
+
+    - name: Extract V8 Library
+      shell: powershell
+      run: |
+        cd armorcore/v8/libraries/win32/release/
+        7z x v8_monolith.7z
+        rm v8_monolith.7z
+
+    - name: Generate Visual Studio Project
+      run: node armorcore/make -g direct3d11
+
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+
+    - name: Compile with MSBuild (Release)
+      run: msbuild armorcore/build/Krom.sln /p:Configuration=Release /p:Platform=x64
+
+    - name: Prepare Final Application Folder
+      shell: powershell
+      run: |
+        # Membuat direktori output untuk artifact
+        New-Item -ItemType Directory -Path ./ArmorPaint-Windows
+        # Menyalin aset aplikasi yang diperlukan
+        Copy-Item -Path ./build/krom/* -Destination ./ArmorPaint-Windows/ -Recurse
+        # Menyalin executable hasil compile ke folder utama aplikasi
+        Copy-Item -Path ./armorcore/build/x64/Release/Krom.exe -Destination ./ArmorPaint-Windows/ArmorPaint.exe
+
+    - name: Upload Compiled ArmorPaint
+      uses: actions/upload-artifact@v4
+      with:
+        name: ArmorPaint-Windows-Build
+        path: ./ArmorPaint-Windows/

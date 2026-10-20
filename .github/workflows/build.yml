@@ -11,18 +11,23 @@ jobs:
     - name: Checkout Repository
       uses: actions/checkout@v4
       with:
-        submodules: recursive
         fetch-depth: 0
+
+    - name: Fix and Fetch Submodules Manually
+      shell: powershell
+      run: |
+        # Menginisialisasi dan memperbarui submodule yang kosong akibat proses Fork
+        git submodule init
+        git submodule update --recursive --remote
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20 # Menggunakan versi LTS yang paling stabil untuk ekosistem ArmorPaint
+        node-version: 20
 
     - name: Verify and Extract V8 Library
       shell: powershell
       run: |
-        # Memastikan folder libraries ada sebelum mengekstrak berkas
         $targetPath = "armorcore/v8/libraries/win32/release"
         if (Test-Path $targetPath) {
             cd $targetPath
@@ -35,7 +40,7 @@ jobs:
                 exit 1
             }
         } else {
-            Write-Error "Folder submodule armorcore tidak ditemukan! Pastikan repositori di-clone dengan benar."
+            Write-Error "Folder submodule armorcore tetap tidak ditemukan setelah di-update!"
             exit 1
         }
 

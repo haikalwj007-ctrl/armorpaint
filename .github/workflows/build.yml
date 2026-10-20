@@ -8,41 +8,23 @@ jobs:
     runs-on: windows-2022
 
     steps:
-    - name: Checkout Repository
+    - name: Checkout Repository with Submodules
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
-
-    - name: Fix and Fetch Submodules Manually
-      shell: powershell
-      run: |
-        # Menginisialisasi dan memperbarui submodule yang kosong akibat proses Fork
-        git submodule init
-        git submodule update --recursive --remote
+        # Menginstruksikan GitHub untuk otomatis menarik folder armorcore secara mendalam
+        submodules: recursive 
 
     - name: Setup Node.js
       uses: actions/setup-node@v4
       with:
-        node-version: 20
+        node-version: 24
 
-    - name: Verify and Extract V8 Library
+    - name: Extract V8 Library
       shell: powershell
       run: |
-        $targetPath = "armorcore/v8/libraries/win32/release"
-        if (Test-Path $targetPath) {
-            cd $targetPath
-            if (Test-Path "v8_monolith.7z") {
-                7z x v8_monolith.7z
-                rm v8_monolith.7z
-                Write-Host "Pustaka V8 berhasil diekstrak."
-            } else {
-                Write-Error "Berkas v8_monolith.7z tidak ditemukan di folder tersebut!"
-                exit 1
-            }
-        } else {
-            Write-Error "Folder submodule armorcore tetap tidak ditemukan setelah di-update!"
-            exit 1
-        }
+        cd armorcore/v8/libraries/win32/release/
+        7z x v8_monolith.7z
+        rm v8_monolith.7z
 
     - name: Generate Visual Studio Project
       run: node armorcore/make -g direct3d11
@@ -57,12 +39,8 @@ jobs:
       shell: powershell
       run: |
         New-Item -ItemType Directory -Path ./ArmorPaint-Windows
-        if (Test-Path "./build/krom") {
-            Copy-Item -Path ./build/krom/* -Destination ./ArmorPaint-Windows/ -Recurse
-        }
-        if (Test-Path "./armorcore/build/x64/Release/Krom.exe") {
-            Copy-Item -Path ./armorcore/build/x64/Release/Krom.exe -Destination ./ArmorPaint-Windows/ArmorPaint.exe
-        }
+        Copy-Item -Path ./build/krom/* -Destination ./ArmorPaint-Windows/ -Recurse
+        Copy-Item -Path ./armorcore/build/x64/Release/Krom.exe -Destination ./ArmorPaint-Windows/ArmorPaint.exe
 
     - name: Upload Compiled ArmorPaint
       uses: actions/upload-artifact@v4

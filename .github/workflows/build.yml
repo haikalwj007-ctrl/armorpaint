@@ -1,49 +1,29 @@
-name: Build ArmorPaint Automatically
+name: Build ArmorPaint
 
 on:
-  workflow_dispatch:
+  workflow_dispatch: # Membuat tombol "Run workflow" manual agar bisa diklik kapan saja
 
 jobs:
   build-windows:
-    runs-on: windows-2022
+    runs-on: windows-latest
 
     steps:
-    - name: Checkout Repository with Submodules
+    - name: Checkout Repository
       uses: actions/checkout@v4
       with:
-        # Menginstruksikan GitHub untuk otomatis menarik folder armorcore secara mendalam
-        submodules: recursive 
+        submodules: recursive
 
-    - name: Setup Node.js
-      uses: actions/setup-node@v4
-      with:
-        node-version: 20
-
-    - name: Extract V8 Library
-      shell: powershell
-      run: |
-        cd armorcore/v8/libraries/win32/release/
-        7z x v8_monolith.7z
-        rm v8_monolith.7z
-
-    - name: Generate Visual Studio Project
-      run: node armorcore/make -g direct3d11
-
-    - name: Setup MSBuild
+    - name: Setup MSBuild (Visual Studio)
       uses: microsoft/setup-msbuild@v2
 
-    - name: Compile with MSBuild (Release)
-      run: msbuild armorcore/build/Krom.sln /p:Configuration=Release /p:Platform=x64
+    - name: Generate Solution
+      run: node make
 
-    - name: Prepare Final Application Folder
-      shell: powershell
-      run: |
-        New-Item -ItemType Directory -Path ./ArmorPaint-Windows
-        Copy-Item -Path ./build/krom/* -Destination ./ArmorPaint-Windows/ -Recurse
-        Copy-Item -Path ./armorcore/build/x64/Release/Krom.exe -Destination ./ArmorPaint-Windows/ArmorPaint.exe
+    - name: Compile Code
+      run: msbuild build/ArmorPaint.sln /p:Configuration=Release
 
-    - name: Upload Compiled ArmorPaint
+    - name: Upload Artifact
       uses: actions/upload-artifact@v4
       with:
-        name: ArmorPaint-Windows-Build
-        path: ./ArmorPaint-Windows/
+        name: ArmorPaint-Windows-Binaries
+        path: build/krom/
